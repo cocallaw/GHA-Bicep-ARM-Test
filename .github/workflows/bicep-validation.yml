@@ -45,7 +45,7 @@ jobs:
             bicep build-params bicep/main.bicepparam --outfile arm/azuredeploy.parameters.json
           else
             echo "No .bicepparam found. Generating parameters template..."
-            bicep generate-params --file bicep/main.bicep --outfile ARM/main.generated.parameters.json
+            bicep generate-params bicep/main.bicep --outfile ARM/main.generated.parameters.json
           fi
 
       - name: Test ARM Templates with ARM-TTK
