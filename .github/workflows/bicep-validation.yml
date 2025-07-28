@@ -1,0 +1,77 @@
+name: Bicep Lint, Build, Validate, Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'bicep/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'bicep/**'
+  workflow_dispatch:
+
+jobs:
+  validate-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Bicep CLI
+        run: |
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          sudo mv ./bicep /usr/local/bin/bicep
+          bicep --version
+
+      - name: Lint Bicep Files
+        run: |
+          for file in $(find bicep -name '*.bicep'); do
+            echo "Linting $file"
+            bicep lint "$file"
+          done
+
+      - name: Build Bicep to ARM JSON
+        run: |
+          mkdir -p arm
+          bicep build bicep/main.bicep --outfile arm/azuredeploy.json
+
+      - name: Generate Parameters File (from .bicepparam or fallback)
+        run: |
+          if [ -f "bicep/main.bicepparam" ]; then
+            echo "Found .bicepparam file. Building..."
+            bicep build-params bicep/main.bicepparam --outfile arm/azuredeploy.parameters.json
+          else
+            echo "No .bicepparam found. Generating from template..."
+            bicep generate-params bicep/main.bicep --outfile bicep/main.generated.bicepparam
+            bicep build-params bicep/main.generated.bicepparam --outfile arm/azuredeploy.parameters.json
+          fi
+
+      - name: Test ARM Templates with ARM-TTK
+        id: arm-ttk
+        uses: aliencube/arm-ttk-actions@v0.3
+        with:
+          path: ./ARM/*
+
+      - name: Upload ARM-TTK Test Results
+        shell: bash
+        run: |
+          echo "${{ toJSON(fromJSON(steps.arm-ttk.outputs.results)) }}"
+
+      - name: Upload ARM Templates
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm-templates
+          path: arm/
+
+      #- name: Upload ARM-TTK Results
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: arm-ttk-results
+      #    path: arm-ttk-results/
+
+      - name: Clean Up Generated Files
+        run: |
+          rm -f bicep/main.generated.bicepparam || true
