@@ -44,9 +44,8 @@ jobs:
             echo "Found .bicepparam file. Building..."
             bicep build-params bicep/main.bicepparam --outfile arm/azuredeploy.parameters.json
           else
-            echo "No .bicepparam found. Generating from template..."
-            bicep generate-params bicep/main.bicep --outfile bicep/main.generated.bicepparam
-            bicep build-params bicep/main.generated.bicepparam --outfile arm/azuredeploy.parameters.json
+            echo "No .bicepparam found. Generating parameters template..."
+            bicep generate-params --file bicep/main.bicep --outfile ARM/main.generated.parameters.json
           fi
 
       - name: Test ARM Templates with ARM-TTK
@@ -74,4 +73,4 @@ jobs:
 
       - name: Clean Up Generated Files
         run: |
-          rm -f bicep/main.generated.bicepparam || true
+          rm -f bicep/main.generated.parameters.json || true
