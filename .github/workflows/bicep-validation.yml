@@ -56,7 +56,11 @@ jobs:
       - name: Upload ARM-TTK Test Results
         shell: bash
         run: |
-          echo "${{ toJSON(fromJSON(steps.arm-ttk.outputs.results)) }}"
+          if [ -n "${{ steps.arm-ttk.outputs.results }}" ]; then
+            echo "ARM-TTK Results: ${{ steps.arm-ttk.outputs.results }}"
+          else
+            echo "No ARM-TTK results available"
+          fi
 
       - name: Upload ARM Templates
         uses: actions/upload-artifact@v4
