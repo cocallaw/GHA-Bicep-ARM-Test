@@ -51,7 +51,7 @@ jobs:
         id: arm-ttk
         uses: aliencube/arm-ttk-actions@v0.3
         with:
-          path: ./ARM/*
+          path: ./arm/*
 
       - name: Upload ARM-TTK Test Results
         shell: bash
